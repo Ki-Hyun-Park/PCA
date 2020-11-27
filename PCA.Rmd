@@ -1,0 +1,70 @@
+---
+title: "Principal Component Analysis"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+#Data and Plot
+library(mvtnorm)
+library(ggplot2)
+set.seed(9)
+sig <- matrix(c(9, 5, 5, 4), nrow = 2)
+x <- rmvnorm(200, sigma = sig, mean = c(20,40))
+head(x)
+cor(x)
+cov(x)
+p <- ggplot(as.data.frame(x), aes(x = V1, y = V2)) + geom_point() + 
+    xlim(10, 30) + ylim(30,50)
+print(p)
+
+#Centering data & Finding Column Means
+means = colMeans(x)
+xc <- x - cbind(rep(1, 200))%*%means
+colMeans(xc)
+
+#Checking the result
+print(1/(200-1)*t(xc)%*%xc)
+print(cov(x))
+
+#Eigenvectors and Eigenvalues
+e <- eigen(t(xc)%*%xc/(200-1))
+Q <- e$vectors
+print(e$values)
+print(Q)
+print(Q%*%diag(e$values)%*%t(Q))
+
+#Principal Direction
+p <- ggplot(as.data.frame(xc), aes(x = V1, y = V2)) + geom_point() + 
+    xlim(-10, 10) + ylim(-10,10) + 
+    geom_segment(x = 0, y = 0, xend = e$vector[1,1]*10, 
+                 yend = e$vector[2,1]*10, arrow = arrow()) +
+    geom_segment(x = 0, y = 0, xend = e$vector[1,2]*10, 
+                 yend = e$vector[2,2]*10, arrow = arrow()) 
+print(p)
+
+#Origial data multiplied by eigenvectors
+pc <- xc %*% Q
+p <- ggplot(as.data.frame(pc), aes(x = V1, y = V2)) + geom_point() + 
+    xlim(-10, 10) + ylim(-10,10) 
+print(p)
+
+#Covariance & Correlation of Principal Component
+print(cov(pc))
+print(cor(pc))
+
+#First Principal Component
+pc1 <- pc[,1]
+c(mean(pc1), sd(pc1))
+qqnorm(pc1); qqline(pc1)
+
+#Projection of data onto the first principal component direction
+xrec <- pc1 %*% t(Q[,1])
+xrec <- xrec + cbind(rep(1,200))%*%means
+p <- ggplot(as.data.frame(xrec), aes(x = V1, y = V2)) + geom_point()  + xlim(10, 30) + ylim(30,50)
+print(p)
+```
